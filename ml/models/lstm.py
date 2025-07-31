@@ -5,7 +5,7 @@ import torch
 
 class LSTM(torch.nn.Module):
     def __init__(self, input_dim: int, lstm_hidden_size: int = 128, num_lstm_layers: int = 2, lstm_dropout: float = 0.2,
-                 layer_units: List[int] = [128, 64], num_outputs: int = 2, init_weights: bool = True,
+                 layer_units: List[int] = [128, 64], num_outputs: int = 6, init_weights: bool = True,
                  matrix_rep: bool = False, exogenous_dim: int = 0):
         super(LSTM, self).__init__()
 
