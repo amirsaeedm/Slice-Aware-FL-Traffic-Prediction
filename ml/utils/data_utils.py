@@ -578,3 +578,105 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
             return self.X[index], [], y_hist, self.y[index]
         else:
             return self.X[index], self.exogenous[index], y_hist, self.y[index]
+
+# --------------------------------------
+# ----- Added for Capstone project -----
+# --------------------------------------
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.model_selection import train_test_split
+
+def clean_nan(df, nan_constant=0.0):
+    return df.fillna(nan_constant)
+
+def cap_outliers(df, lower_quantile=0.01, upper_quantile=0.99):
+    capped_df = df.copy()
+    numeric_cols = capped_df.select_dtypes(include=[np.number]).columns
+    for col in numeric_cols:
+        low = capped_df[col].quantile(lower_quantile)
+        high = capped_df[col].quantile(upper_quantile)
+        capped_df[col] = capped_df[col].clip(lower=low, upper=high)
+    return capped_df
+
+def scale_data(df, scaler_type="minmax"):
+    scaler = MinMaxScaler() if scaler_type == "minmax" else StandardScaler()
+    scaled_values = scaler.fit_transform(df)
+    return scaled_values, scaler
+
+def generate_time_lags(df, num_lags):
+    lagged_df = pd.DataFrame(index=df.index)
+    for col in df.columns:
+        for lag in range(1, num_lags + 1):
+            lagged_df[f"{col}_lag_{lag}"] = df[col].shift(lag)
+    return lagged_df
+
+def read_data(path):
+    return pd.read_csv(path, parse_dates=["time"])
+
+def prepare_dataset(args):
+    df = read_data(args.data_path)
+
+    if args.ignore_cols:
+        df.drop(columns=args.ignore_cols, inplace=True)
+
+    df = clean_nan(df, nan_constant=args.nan_constant)
+
+    if args.outlier_detection:
+        df = cap_outliers(df)
+
+    # Save identifier column (e.g., District) separately
+    identifier_col = df[args.identifier] if args.identifier else None
+
+    # Separate inputs and targets
+    X = df.drop(columns=args.targets)
+    y = df[args.targets]
+
+    # Select only numeric features for model input
+    X = X.select_dtypes(include=[np.number])
+
+    # Apply scaling
+    x_scaled, x_scaler = scale_data(X, scaler_type=args.x_scaler)
+    y_scaled, y_scaler = scale_data(y, scaler_type=args.y_scaler)
+
+    # Back to DataFrames for lag generation
+    X_scaled_df = pd.DataFrame(x_scaled, columns=X.columns, index=X.index)
+    y_scaled_df = pd.DataFrame(y_scaled, columns=y.columns, index=y.index)
+
+    # Apply lag features
+    X_lagged = generate_time_lags(X_scaled_df, args.num_lags)
+
+    # Create multi-step targets: t+1 to t+forecast_steps
+    y_future = y_scaled_df.copy()
+    for i in range(1, args.forecast_steps + 1):
+        for col in args.targets:
+            y_future[f"{col}_step_{i}"] = y_scaled_df[col].shift(-i)
+
+    # Combine and drop NaNs
+    data = pd.concat([X_lagged, y_future], axis=1).dropna()
+
+    # Align identifier with processed data
+    if identifier_col is not None:
+        identifier_col = identifier_col.loc[data.index]
+
+    # Final X and y
+    X_final = data[X_lagged.columns].values
+    y_final = data[[f"{col}_step_{i}" for i in range(1, args.forecast_steps + 1) for col in args.targets]].values
+
+    # Reshape targets to 3D: [samples, steps, targets]
+    y_final = y_final.reshape(-1, args.forecast_steps, len(args.targets))
+
+    # Train/Test split
+    X_train, X_test, y_train, y_test = train_test_split(X_final, y_final, test_size=args.test_size, shuffle=False)
+
+    # Reshape inputs for LSTM: [samples, seq_len, input_dim]
+    X_train = X_train.reshape(-1, args.num_lags, X_train.shape[1] // args.num_lags)
+    X_test = X_test.reshape(-1, args.num_lags, X_test.shape[1] // args.num_lags)
+
+    # Split identifier if provided
+    if identifier_col is not None:
+        id_train, id_test = train_test_split(identifier_col, test_size=args.test_size, shuffle=False)
+        return X_train, y_train, X_test, y_test, x_scaler, y_scaler, id_train, id_test
+    else:
+        return X_train, y_train, X_test, y_test, x_scaler, y_scaler
