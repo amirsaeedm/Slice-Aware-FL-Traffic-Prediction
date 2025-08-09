@@ -680,3 +680,15 @@ def prepare_dataset(args):
         return X_train, y_train, X_test, y_test, x_scaler, y_scaler, id_train, id_test
     else:
         return X_train, y_train, X_test, y_test, x_scaler, y_scaler
+    
+def ensure_tensor_shapes_for_transformer(X, y, forecast_steps):
+    """
+    Ensures shapes for transformer training:
+      X: [N, L, D], y: [N, H, K] with H==forecast_steps
+    Returns X, y unchanged if valid; raises AssertionError otherwise.
+    """
+    assert X.ndim == 3, f"Expected X as [N,L,D], got {X.shape}"
+    assert y.ndim == 3, f"Expected y as [N,H,K], got {y.shape}"
+    assert y.shape[1] == forecast_steps, f"y second dim must equal forecast_steps={forecast_steps}, got {y.shape[1]}"
+    return X, y
+
