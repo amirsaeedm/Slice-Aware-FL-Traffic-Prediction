@@ -26,15 +26,7 @@ KMeans clustering on traffic features (rnti_count, rb_down, mcs_up, mcs_down, et
 How:
 Since actual slice information is not available in the dataset, we simulate slice behaviour using unsupervised clustering. KMeans is applied to normalized traffic features such as active user count (rnti_count), throughput (up, down), modulation and coding schemes (mcs_up, mcs_down), and resource block usage. Each resulting cluster is labeled as a pseudo-slice, roughly corresponding to traffic classes like eMBB, URLLC, or mMTC.
 
-### 4. Slice-Aware Client Partitioning in Federated Learning (Enhancement)
-Justification:
-Including the pseudo-slice label as a feature allows the model to learn behavioural traffic differences while preserving the natural grouping of data per base station. This avoids excessive fragmentation of client data and improves convergence while still enabling slice-aware learning. It enhances model generalization by embedding slice-type awareness directly into the input space, making the approach more scalable and easier to implement in real networks where per-slice data segmentation may not be feasible.
-Technique Used: 
-Pseudo-slice clustering label added as a feature column; clients grouped per base station; models trained with cluster context; FedAvg for model aggregation.
-How:
-In this enhancement, we use the KMeans clustering step to assign a pseudo-slice label to each data point and add it as a new feature column in the dataset. This label indicates the traffic behavior pattern (e.g., eMBB-like, URLLC-like, mMTC-like) for that specific timestamp. Federated learning clients are still grouped by base station, but instead of separating data physically per slice, each client's model learns from local data that includes the pseudo-slice context. The cluster label is treated as a categorical or one-hot encoded input to the model, allowing it to distinguish between different traffic patterns while training. Model updates from each client are aggregated using the FedAvg algorithm through the Flower framework.
-
-### 6.	Transformer-Based Forecasting Models (Enhancement)
+### 4.	Transformer-Based Forecasting Models (Enhancement)
 Justification:
 Transformers can outperform recurrent models like LSTM when it comes to learning complex, long-term patterns, especially in time-series data. Evaluating them alongside LSTMs helps benchmark performance and provides architectural insights for 5G traffic modelling.
 Technique Used: 
@@ -42,7 +34,7 @@ TimesNet or Informer (attention-based time-series models), trained under FL and 
 How:
 We incorporate transformer architectures such as TimesNet or Informer to model long-range temporal dependencies in the traffic data. These models are adapted to perform multi-step forecasting and are trained using both centralized and federated configurations. Inputs are the same as the LSTM models, and output is a sequence of predicted traffic values.
 
-### 6. Real-Time Dashboard and Visualization (Enhancement)
+### 5. Real-Time Dashboard and Visualization (Enhancement)
 Justification:
 Interactive visualization makes the forecasting outcomes understandable for both technical and non-technical users. It adds value to the project presentation and is particularly useful in academic evaluations and live demos.
 Technique Used: 
@@ -50,6 +42,7 @@ Streamlit web framework, historical data replay for simulation.
 How:
 To demonstrate model behaviour interactively, we build a dashboard using Streamlit. It replays historical logs row-by-row, simulating real-time input. The interface displays predicted vs. actual traffic per pseudo-slice and allows users to switch between models and base stations. Visual elements include time-series plots, prediction intervals, and performance metrics.
 
+![alt text](image.png)
 
 
 ## Federated Time-Series Forecasting
