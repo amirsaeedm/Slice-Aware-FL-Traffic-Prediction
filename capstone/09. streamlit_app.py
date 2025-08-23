@@ -40,7 +40,7 @@ STATIONS = {
     "PobleSec": (41.3724, 2.1620),
 }
 
-# Static metrics (as given by you)
+# Static metrics list
 METRICS_T1 = [
     ["Seq2Seq LSTM",       0.00658, 0.08110, 0.06016, 0.57912, 0.11334, 25.47, 22.70],
     ["Transformer",   0.00634, 0.07961, 0.05864, 0.59453, 0.11125, 23.21, 22.62],
