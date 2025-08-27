@@ -24,45 +24,89 @@ from ml.models.transformer import TimeSeriesTransformer
 # =========================
 st.set_page_config(page_title="Slice-aware FL Prediction", layout="wide")
 
-DATAPATH = "../dataset/combined_with_cluster_feature.csv"
-CKPT_S2S_CLU    = "seq2seq_cluster_huber.pt"
-CKPT_TRANS_CLU  = "transformer_multistep_cluster.pt"
+# Updated paths
+DATAPATH       = "../dataset/combined_with_cluster_feature_with_extraData_26Aug_cp.csv"
+CKPT_S2S_CLU   = "seq2seq_cluster_with_extra_data_26Aug.pt"
+CKPT_TRANS_CLU = "transformer_multistep_cluster_with_extra_data_26Aug.pt"
 
 TARGETS   = ["rnti_count", "rb_down", "rb_up", "down", "up"]
 H         = 6               # horizon
 L         = 10              # history window (lags)
 DATA_FREQ = "2min"          # dataset cadence
 
-# Station positions (map)
+# Map – Barcelona + Riyadh
 STATIONS = {
+    # Barcelona
     "ElBorn":   (41.3853, 2.1827),
     "LesCorts": (41.3850, 2.1247),
     "PobleSec": (41.3724, 2.1620),
+    # Riyadh 
+    "Sulay":  (24.6576, 46.8299),  
+    "Granada":  (24.788635, 46.72914),  
+    "Olaya":  (24.686968, 46.693213),  
 }
 
-# Static metrics list
-METRICS_T1 = [
-    ["Seq2Seq LSTM",       0.00658, 0.08110, 0.06016, 0.57912, 0.11334, 25.47, 22.70],
-    ["Transformer",   0.00634, 0.07961, 0.05864, 0.59453, 0.11125, 23.21, 22.62],
-]
-METRICS_COLS = ["Experiment","MSE","RMSE","MAE","R²","NRMSE","MAPE%","sMAPE%"]
+# =========================
+# Metrics (per-variable, as provided)
+# =========================
+# Keep short names that match the sidebar selection below
+METRICS = pd.DataFrame([
+    # Transformer
+    ["Transformer", "rnti_count (Number of Users)",          0.0130, 0.1141, 0.0914, 0.2821, 0.1509,  38.22,  31.63],
+    ["Transformer", "rb_down (Downlink Resource Blocks)",    0.0066, 0.0813, 0.0420, 0.5480, 0.0816,  48.44,  39.42],
+    ["Transformer", "rb_up (Uplink Resource Blocks)",        0.0164, 0.1279, 0.0617, 0.4615, 0.1279, 2273.49, 113.19],
+    ["Transformer", "down (Downlink Traffic)",               0.0042, 0.0650, 0.0517, 0.4305, 0.0797,  51.20,  36.48],
+    ["Transformer", "up (Uplink Traffic)",                   0.0185, 0.1360, 0.0652, 0.3603, 0.1360, 1167.29,  95.99],
+    # Seq2Seq
+    ["Seq2Seq LSTM", "rnti_count (Number of Users)",         0.0153, 0.1236, 0.0945, 0.1567, 0.1635,  32.94,  32.96],
+    ["Seq2Seq LSTM", "rb_down (Downlink Resource Blocks)",   0.0060, 0.0773, 0.0408, 0.5912, 0.0776,  47.21,  39.80],
+    ["Seq2Seq LSTM", "rb_up (Uplink Resource Blocks)",       0.0176, 0.1326, 0.0623, 0.4205, 0.1326, 2689.38, 109.64],
+    ["Seq2Seq LSTM", "down (Downlink Traffic)",              0.0034, 0.0586, 0.0430, 0.5382, 0.0717,  39.01,  30.69],
+    ["Seq2Seq LSTM", "up (Uplink Traffic)",                  0.0202, 0.1422, 0.0654, 0.3002, 0.1422,  764.47,  98.90],
+], columns=["Experiment","Prediction Variable (Scaled)","MSE","RMSE","MAE","R²","NRMSE","MAPE%","sMAPE%"])
+
+import pandas as pd
+
+METRICS_2 = pd.DataFrame([
+    # Transformer Model
+    ["Transformer", "rnti_count (Number of Users)",      3348098.0,  1830.0,   1466.0,   0.2821, 0.1509,   38.22,   31.63],
+    ["Transformer", "rb_down (Downlink Resource Blocks)",      0.00053,   0.0231,   0.0119, 0.5480, 0.0816,   48.44,   39.42],
+    ["Transformer", "rb_up (Uplink Resource Blocks)",          0.000110,  0.010508, 0.005068,0.4615, 0.1279, 2273.49, 113.19],
+    ["Transformer", "down (Downlink Traffic)",     2304538955607330.0, 48005614.0, 38160872.0, 0.4305, 0.0797,   51.20,   36.48],
+    ["Transformer", "up (Uplink Traffic)",          270578592444709.0, 16449273.0,  7894121.0, 0.3603, 0.1360, 1167.29,   95.99],
+
+    # Seq2Seq LSTM
+    ["Seq2Seq LSTM", "rnti_count (Number of Users)",             3932677.0,  1983.0,   1516.0,   0.1567, 0.1635,   32.94,   32.96],
+    ["Seq2Seq LSTM", "rb_down (Downlink Resource Blocks)",           0.00048,   0.0220,   0.0116, 0.5912, 0.0776,   47.21,   39.80],
+    ["Seq2Seq LSTM", "rb_up (Uplink Resource Blocks)",               0.000119,  0.010901, 0.005121,0.4205, 0.1326, 2689.38, 109.64],
+    ["Seq2Seq LSTM", "down (Downlink Traffic)",         1868676701951160.0, 43228193.0, 31711447.0, 0.5382, 0.0717,   39.01,   30.69],
+    ["Seq2Seq LSTM", "up (Uplink Traffic)",              296010525457247.0, 17204956.0,  7910219.0, 0.3002, 0.1422,  764.47,   98.90],
+], columns=["Experiment","Prediction Variable (Inverse Scaled)","MSE","RMSE","MAE","R²","NRMSE","MAPE%","sMAPE%"])
+
+# Example usage:
+# print(METRICS)
+# METRICS.to_csv("model_metrics.csv", index=False)
+
 
 # =========================
 # Utilities
 # =========================
 def normalize_name(s: str) -> str:
-    s = str(s).strip().lower()
-    if "el born" in s or s.startswith("elborn"):   return "ElBorn"
-    if "les corts" in s or s.startswith("lescorts"): return "LesCorts"
-    if "poble sec" in s or s.startswith("poblesec"): return "PobleSec"
-    return s.title()
+    s0 = str(s).strip()
+    s  = s0.lower()
+    if "el born" in s or s.startswith("elborn"):      return "ElBorn"
+    if "les corts" in s or s.startswith("lescorts"):  return "LesCorts"
+    if "poble sec" in s or s.startswith("poblesec"):  return "PobleSec"
+    # RIY* pass-through (ensure exact keys)
+    if s0.upper().startswith("RIY"):
+        return s0.upper()
+    return s0.title()
 
 def inverse_single_col(y_scaled_1d: np.ndarray, scaler, j: int) -> np.ndarray:
-    """Inverse-transform a single target column j using MinMax or Standard scaler."""
     y_scaled_1d = np.asarray(y_scaled_1d)
     if hasattr(scaler, "min_") and hasattr(scaler, "scale_"):      # MinMax
         return (y_scaled_1d - scaler.min_[j]) / scaler.scale_[j]
-    if hasattr(scaler, "mean_") and hasattr(scaler, "scale_"):      # Standard
+    if hasattr(scaler, "mean_") and hasattr(scaler, "scale_"):     # Standard
         return y_scaled_1d * scaler.scale_[j] + scaler.mean_[j]
     raise ValueError("Unknown scaler type for inverse transform.")
 
@@ -71,7 +115,6 @@ def inverse_single_col(y_scaled_1d: np.ndarray, scaler, j: int) -> np.ndarray:
 # =========================
 @st.cache_data(show_spinner=False)
 def load_raw_and_scalers():
-    """Load raw dataset + fitted scalers (consistent with training). Also compute station time bounds."""
     raw = pd.read_csv(DATAPATH, parse_dates=["time"])
     raw["District"] = raw["District"].map(normalize_name)
     raw = raw.sort_values("time").reset_index(drop=True)
@@ -86,11 +129,9 @@ def load_raw_and_scalers():
     X_tr, y_tr, X_te, y_te, x_scaler, y_scaler, id_tr, id_te = prepare_dataset(args)
     D = X_te.shape[2]
 
-    # Base feature columns for X (drop target cols, keep numerics)
     X_num = raw.drop(columns=TARGETS, errors="ignore").select_dtypes(include=[np.number]).copy()
     x_base_cols = list(X_num.columns)
 
-    # Per-station valid bounds for complete L+H windows
     bounds = {}
     off = pd.to_timedelta(DATA_FREQ)
     for station in STATIONS.keys():
@@ -98,19 +139,18 @@ def load_raw_and_scalers():
         if d.empty:
             bounds[station] = (None, None); continue
         d = d.reset_index(drop=True)
+
         Xb = d.drop(columns=TARGETS, errors="ignore").select_dtypes(include=[np.number]).copy()
         for c in x_base_cols:
             if c not in Xb.columns: Xb[c] = 0.0
         Xb = Xb[x_base_cols]
         Xb_scaled = pd.DataFrame(x_scaler.transform(Xb.values), columns=x_base_cols, index=d.index)
 
-        # Lag features
         X_lagged = pd.DataFrame(index=d.index)
         for col in x_base_cols:
             for lag in range(1, L + 1):
                 X_lagged[f"{col}_lag_{lag}"] = Xb_scaled[col].shift(lag)
 
-        # Future labels (original) just to know completeness
         y_future = pd.DataFrame(index=d.index)
         for i in range(1, H + 1):
             for tcol in TARGETS:
@@ -163,20 +203,17 @@ def build_windows_for_station(raw_df, station, sel_start, sel_end, x_base_cols, 
 
     d = d.sort_values("time").reset_index(drop=True)
 
-    # Scale base numerics
     Xb = d.drop(columns=TARGETS, errors="ignore").select_dtypes(include=[np.number]).copy()
     for c in x_base_cols:
         if c not in Xb.columns: Xb[c] = 0.0
     Xb = Xb[x_base_cols]
     Xb_scaled = pd.DataFrame(x_scaler.transform(Xb.values), columns=x_base_cols, index=d.index)
 
-    # Lag features
     X_lagged = pd.DataFrame(index=d.index)
     for col in x_base_cols:
         for lag in range(1, L + 1):
             X_lagged[f"{col}_lag_{lag}"] = Xb_scaled[col].shift(lag)
 
-    # Future labels (original)
     y_future = pd.DataFrame(index=d.index)
     for i in range(1, H + 1):
         for tcol in TARGETS:
@@ -187,7 +224,6 @@ def build_windows_for_station(raw_df, station, sel_start, sel_end, x_base_cols, 
         D_here = Xb_scaled.shape[1]
         return (np.zeros((0, L, D_here)), np.zeros((0, H, len(TARGETS))), np.zeros((0, L, len(TARGETS))), [])
 
-    # Range filter by last_future_times
     last_future_times = glued["time"] + H * off
     mask = (last_future_times >= pd.to_datetime(sel_start)) & (last_future_times <= pd.to_datetime(sel_end))
     glued = glued.loc[mask].reset_index(drop=True)
@@ -196,20 +232,17 @@ def build_windows_for_station(raw_df, station, sel_start, sel_end, x_base_cols, 
         D_here = Xb_scaled.shape[1]
         return (np.zeros((0, L, D_here)), np.zeros((0, H, len(TARGETS))), np.zeros((0, L, len(TARGETS))), [])
 
-    # X_scaled_3d
     lag_cols = [c for c in X_lagged.columns]
     X_flat = glued[lag_cols].values
     D_here = len(x_base_cols)
     X_scaled_3d = X_flat.reshape(-1, L, D_here)
 
-    # Y_orig
     y_cols = []
     for i in range(1, H + 1):
         for tcol in TARGETS:
             y_cols.append(f"{tcol}_step_{i}")
     Y_orig = glued[y_cols].values.reshape(-1, H, len(TARGETS))
 
-    # HIST_orig (no overlap with future)
     d2 = d.set_index("time")
     HIST_orig = np.zeros((X_scaled_3d.shape[0], L, len(TARGETS)), dtype=float)
     for n, t_last in enumerate(pd.to_datetime(last_future_times)):
@@ -231,16 +264,15 @@ def panel_fig(name, hist, fut_true, fut_pred):
     x_fut  = np.arange(1, Hh + 1, 1)
 
     fig = go.Figure()
-    # History (light blue solid)
+    # History (light blue)
     fig.add_trace(go.Scatter(x=x_hist, y=hist, mode="lines+markers",
                              name=f"{name} (history)", line=dict(color="#83C9FF")))
-    # True (blue solid)
+    # True (dark blue)
     fig.add_trace(go.Scatter(x=x_fut, y=fut_true, mode="lines+markers",
                              name=f"{name} (true)", line=dict(color="#0068C9")))
-    # Predicted (orange light dotted)
+    # Pred (orange dotted)
     fig.add_trace(go.Scatter(x=x_fut, y=fut_pred, mode="lines+markers",
-                             name=f"{name} (pred)", line=dict(color=" #FFABAB",dash="dot")))
-
+                             name=f"{name} (pred)", line=dict(color="#FF8C00", dash="dot")))
     fig.add_vline(x=0, line_width=2, line_dash="dash", line_color="gray")
     fig.update_layout(height=240, margin=dict(l=10, r=10, t=30, b=10),
                       title=name, xaxis_title="Relative time", yaxis_title="Original scale")
@@ -250,12 +282,11 @@ def render_panels(HIST_orig, Y_orig, Y_pred_orig):
     figs = []
     if HIST_orig.shape[0] == 0:
         return figs
-    # show the LAST available window in the chosen range
     hist_last = HIST_orig[-1]
     true_last = Y_orig[-1]
     pred_last = Y_pred_orig[-1]
-    TARGET_NAMES = ["rnti (Number of Users)", "rb_down (Downlink Resource Blocks)", 
-                    "rb_up (Uplink Resource Blocks)", "down (Downlink Throughput)", "up (Uplink Throughput)"]
+    TARGET_NAMES = ["rnti (Number of Users)", "rb_down (Downlink Resource Blocks)",
+                    "rb_up (Uplink Resource Blocks)", "down (Downlink Traffic)", "up (Uplink Traffic)"]
     for j, name in enumerate(TARGET_NAMES):
         figs.append(panel_fig(name, hist_last[:, j], true_last[:, j], pred_last[:, j]))
     return figs
@@ -264,6 +295,7 @@ def render_panels(HIST_orig, Y_orig, Y_pred_orig):
 # UI
 # =========================
 st.markdown("## Slice-aware FL Multi-step Prediction Dashboard")
+st.divider()   
 
 # Load raw + scalers + bounds
 raw, x_scaler, y_scaler, D_feat, x_base_cols, time_bounds, districts_all = load_raw_and_scalers()
@@ -292,14 +324,8 @@ with st.sidebar:
         format="YYYY-MM-DD HH:mm",
     )
 
-# Metrics table (top-center): show only the selected model row, white text on dark bg
-df_metrics = pd.DataFrame(METRICS_T1, columns=METRICS_COLS)
-df_selected = df_metrics[df_metrics["Experiment"] == model_choice].copy()
-sty = (df_selected.style
-       .set_properties(**{"color": "white", "background-color": "#1f2937"}))
-st.dataframe(sty, use_container_width=True)
 
-# Load models
+# Load models once
 s2s_model, trans_model, DEVICE = load_models(D_feat)
 
 # Build windows for selected station/time
@@ -320,7 +346,6 @@ if X_scaled_3d.shape[0] > 0:
             y_pred_scaled = s2s_model(xb, teacher_forcing_ratio=0.0).cpu().numpy()
         else:
             y_pred_scaled = trans_model(xb).cpu().numpy()
-    # Inverse per target column
     Nw, Hh, Tn = y_pred_scaled.shape
     Y_pred_orig = np.zeros_like(y_pred_scaled, dtype=float)
     for j in range(Tn):
@@ -333,24 +358,46 @@ left, right = st.columns([1.25, 1.0], gap="large")
 
 with right:
     st.markdown(f"### Base Station: `{bs_choice}`")
+
+    # Build points (selected bright, others dim)
     pts = []
     for name, (lat, lon) in STATIONS.items():
-        color = [0, 200, 140] if name == bs_choice else [150, 150, 150]
-        radius = 130 if name == bs_choice else 70
-        pts.append(dict(name=name, lat=lat, lon=lon, color=color, radius=radius))
+        sel = (name == bs_choice)
+        pts.append(dict(
+            name=name,
+            lat=lat,
+            lon=lon,
+            color=[0, 200, 140] if sel else [160, 160, 160],
+            radius=300 if sel else 140,
+        ))
     df_map = pd.DataFrame(pts)
+
+    # Center the camera on the selected site
+    sel_lat, sel_lon = STATIONS[bs_choice]
+
     st.pydeck_chart(pdk.Deck(
-        map_provider="carto", map_style="light",
+        map_provider="carto",
+        map_style="light",  # "light", "dark-matter", or "voyager"
         initial_view_state=pdk.ViewState(
-            latitude=float(df_map.lat.mean()),
-            longitude=float(df_map.lon.mean()),
-            zoom=12
+            latitude=float(sel_lat),
+            longitude=float(sel_lon),
+            zoom=20 if bs_choice.startswith("RIY") else 12,
+            pitch=0,
+            bearing=0,
         ),
-        layers=[pdk.Layer("ScatterplotLayer", data=df_map,
-                          get_position='[lon, lat]', get_radius="radius",
-                          get_fill_color="color", pickable=True)],
+        layers=[
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=df_map,
+                get_position='[lon, lat]',
+                get_radius="radius",
+                get_fill_color="color",
+                pickable=True,
+            )
+        ],
         tooltip={"text": "{name}"}
     ))
+
 
 with left:
     if X_scaled_3d.shape[0] == 0:
@@ -359,3 +406,18 @@ with left:
         figs = render_panels(HIST_orig, Y_orig, Y_pred_orig)
         for fig in figs:
             st.plotly_chart(fig, use_container_width=True)
+
+
+st.divider()            
+# Metrics table (top-center): filter by selected model; white text on dark background
+df_selected = METRICS[METRICS["Experiment"] == model_choice].copy()
+st.dataframe(
+    df_selected.style.set_properties(**{"color": "white", "background-color": "#1f2937"}),
+    use_container_width=True
+)
+df_selected_2 = METRICS_2[METRICS_2["Experiment"] == model_choice].copy()
+st.dataframe(
+    df_selected_2.style.set_properties(**{"color": "white", "background-color": "#1f2937"}),
+    use_container_width=True
+)
+
