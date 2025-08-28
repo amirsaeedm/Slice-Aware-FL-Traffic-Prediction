@@ -65,8 +65,6 @@ METRICS = pd.DataFrame([
     ["Seq2Seq LSTM", "up (Uplink Traffic)",                  0.0202, 0.1422, 0.0654, 0.3002, 0.1422,  764.47,  98.90],
 ], columns=["Experiment","Prediction Variable (Scaled)","MSE","RMSE","MAE","R²","NRMSE","MAPE%","sMAPE%"])
 
-import pandas as pd
-
 METRICS_2 = pd.DataFrame([
     # Transformer Model
     ["Transformer", "rnti_count (Number of Users)",      3348098.0,  1830.0,   1466.0,   0.2821, 0.1509,   38.22,   31.63],
