@@ -47,7 +47,7 @@ STATIONS = {
 }
 
 # =========================
-# Metrics (per-variable, as provided)
+# Metrics (per-variable)
 # =========================
 # Keep short names that match the sidebar selection below
 METRICS = pd.DataFrame([
@@ -82,10 +82,6 @@ METRICS_2 = pd.DataFrame([
     ["Seq2Seq LSTM", "down (Downlink Traffic)",         1868676701951160.0, 43228193.0, 31711447.0, 0.5382, 0.0717,   39.01,   30.69],
     ["Seq2Seq LSTM", "up (Uplink Traffic)",              296010525457247.0, 17204956.0,  7910219.0, 0.3002, 0.1422,  764.47,   98.90],
 ], columns=["Experiment","Prediction Variable (Inverse Scaled)","MSE","RMSE","MAE","R²","NRMSE","MAPE%","sMAPE%"])
-
-# Example usage:
-# print(METRICS)
-# METRICS.to_csv("model_metrics.csv", index=False)
 
 
 # =========================
@@ -186,7 +182,7 @@ def load_models(D):
     return s2s, trans, device
 
 # =========================
-# Build windows (from raw)
+# Build windows (from dataset)
 # =========================
 def build_windows_for_station(raw_df, station, sel_start, sel_end, x_base_cols, x_scaler):
     """
@@ -292,7 +288,7 @@ def render_panels(HIST_orig, Y_orig, Y_pred_orig):
     return figs
 
 # =========================
-# UI
+# Streamlit UI
 # =========================
 st.markdown("## Slice-aware FL Multi-step Prediction Dashboard")
 st.divider()   
@@ -377,7 +373,7 @@ with right:
 
     st.pydeck_chart(pdk.Deck(
         map_provider="carto",
-        map_style="light",  # "light", "dark-matter", or "voyager"
+        map_style="light",  
         initial_view_state=pdk.ViewState(
             latitude=float(sel_lat),
             longitude=float(sel_lon),
@@ -409,7 +405,7 @@ with left:
 
 
 st.divider()            
-# Metrics table (top-center): filter by selected model; white text on dark background
+# Metrics table (bottom-center): filter by selected model; white text on dark background
 df_selected = METRICS[METRICS["Experiment"] == model_choice].copy()
 st.dataframe(
     df_selected.style.set_properties(**{"color": "white", "background-color": "#1f2937"}),
