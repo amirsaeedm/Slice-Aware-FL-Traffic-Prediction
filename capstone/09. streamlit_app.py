@@ -20,7 +20,7 @@ from ml.models.seq2seq_lstm import Seq2SeqLSTM
 from ml.models.transformer import TimeSeriesTransformer
 
 # =========================
-# Config
+# Configure
 # =========================
 st.set_page_config(page_title="Slice-aware FL Prediction", layout="wide")
 
@@ -49,6 +49,7 @@ STATIONS = {
 # =========================
 # Metrics (per-variable)
 # =========================
+
 # Keep short names that match the sidebar selection below
 METRICS = pd.DataFrame([
     # Transformer
@@ -402,7 +403,8 @@ with left:
             st.plotly_chart(fig, use_container_width=True)
 
 
-st.divider()            
+st.divider() 
+
 # Metrics table (bottom-center): filter by selected model; white text on dark background
 df_selected = METRICS[METRICS["Experiment"] == model_choice].copy()
 st.dataframe(
