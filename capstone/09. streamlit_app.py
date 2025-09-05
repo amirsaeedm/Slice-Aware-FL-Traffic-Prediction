@@ -46,6 +46,17 @@ STATIONS = {
     "Olaya":  (24.686968, 46.693213),  
 }
 
+# Base Stations to Cluster Mapping
+CLUSTERS = {
+    "ElBorn":   'eMBB',
+    "LesCorts": 'eMBB',
+    "PobleSec": 'eMBB',
+    "Sulay":    'URLLC',  
+    "Granada":  'URLLC',  
+    "Olaya":    'URLLC',
+}
+
+
 # =========================
 # Metrics (per-variable)
 # =========================
@@ -351,7 +362,7 @@ else:
 left, right = st.columns([1.25, 1.0], gap="large")
 
 with right:
-    st.markdown(f"### Base Station: `{bs_choice}`")
+    st.markdown(f"### Base Station: `{bs_choice}`\t Cluster: `{CLUSTERS.get(bs_choice, 'N/A')}`")
 
     # Build points (selected bright, others dim)
     pts = []
